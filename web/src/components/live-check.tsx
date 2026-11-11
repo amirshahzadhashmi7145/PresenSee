@@ -10,7 +10,7 @@ interface View {
   total: number;
   challenge: Challenge;
 }
-type Phase = "idle" | "starting" | "relax" | "move" | "checking" | "passed" | "failed";
+type Phase = "idle" | "starting" | "ready" | "relax" | "move" | "checking" | "good" | "passed" | "failed";
 
 const MOVE_TEXT: Record<Challenge, string> = {
   turn_left: "Turn your head to YOUR left",
@@ -34,9 +34,11 @@ const REASON_TEXT: Record<string, string> = {
 
 const WIDTH = 480;
 const HEIGHT = 360;
-const FRAME_GAP_MS = 125;
-const RELAX_FRAMES = 8; // about 1 second looking straight
-const MOVE_FRAMES = 16; // about 2 seconds doing the move
+const FRAME_GAP_MS = 200;
+const SETTLE_MS = 2500; // time to read the next move before recording starts
+const RELAX_FRAMES = 8; // about 1.5 seconds looking straight
+const MOVE_FRAMES = 22; // about 4.5 seconds to do the move and hold it
+const BETWEEN_MOVES_MS = 1500;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -106,8 +108,9 @@ export function LiveCheck() {
 
       for (;;) {
         setView(current);
+        setPhase("ready");
+        await sleep(SETTLE_MS);
         setPhase("relax");
-        await sleep(1200); // time to read the instruction and settle
         const frames = await captureBurst();
         setPhase("checking");
 
@@ -119,6 +122,8 @@ export function LiveCheck() {
         const body = await res.json();
 
         if (body.result === "next") {
+          setPhase("good");
+          await sleep(BETWEEN_MOVES_MS);
           current = body as View;
           continue;
         }
@@ -139,18 +144,31 @@ export function LiveCheck() {
     }
   }
 
-  const active = phase === "relax" || phase === "move" || phase === "checking" || phase === "starting";
+  const active = !["idle", "passed", "failed"].includes(phase);
   let instruction = "";
+  let hint = "";
   if (phase === "starting") instruction = "Starting the camera…";
-  if (phase === "relax") instruction = "Look straight at the camera, relaxed face";
-  if (phase === "move" && view) instruction = MOVE_TEXT[view.challenge];
+  if (phase === "ready" && view) {
+    instruction = `Next move: ${MOVE_TEXT[view.challenge]}`;
+    hint = "Not yet. First look straight at the camera.";
+  }
+  if (phase === "relax" && view) {
+    instruction = "Look straight, relaxed face";
+    hint = `Get ready to: ${MOVE_TEXT[view.challenge]}`;
+  }
+  if (phase === "move" && view) {
+    instruction = `NOW: ${MOVE_TEXT[view.challenge]}`;
+    hint = "Hold it until this message changes.";
+  }
   if (phase === "checking") instruction = "Checking…";
+  if (phase === "good") instruction = "✓ Good. Look straight again.";
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-semibold">Live selfie check</h2>
       <p className="mt-2 text-slate-600">
-        We will ask you to make 3 small moves in front of your camera. It takes about 15 seconds.
+        We will ask you to make 3 small moves in front of your camera. It takes about 30 seconds.
+        Each move is shown first, then the bar turns green when it is time to do it.
         Make sure your face is well lit and only you are in the picture.
       </p>
 
@@ -158,8 +176,13 @@ export function LiveCheck() {
         {/* Mirrored for comfort only. The frames we send are not mirrored. */}
         <video ref={videoRef} playsInline muted className="h-full w-full -scale-x-100 object-cover" />
         {active && instruction ? (
-          <div className="absolute inset-x-0 bottom-0 bg-black/60 p-3 text-center text-lg font-semibold text-white">
-            {instruction}
+          <div
+            className={`absolute inset-x-0 bottom-0 p-3 text-center text-white ${
+              phase === "move" ? "bg-emerald-700/90" : "bg-black/70"
+            }`}
+          >
+            <div className="text-lg font-semibold">{instruction}</div>
+            {hint ? <div className="text-sm opacity-90">{hint}</div> : null}
           </div>
         ) : null}
         {view && active ? (
