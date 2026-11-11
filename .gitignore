@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.venv/
+__pycache__/
+*.pyc
+
+# Build output and tool caches
+.next/
+coverage/
+.pytest_cache/
+.ruff_cache/
+*.tsbuildinfo
+playwright-report/
+test-results/
+/.cache/
+
+# Secrets: real env files never go to git (only .env.example does)
+.env
+.env.*
+!.env.example
+
+# User data: photos and anything else stored locally must never reach git
+/storage/
+
+# Logs, OS and editor files
+*.log
+.DS_Store
+.idea/
+.vscode/
