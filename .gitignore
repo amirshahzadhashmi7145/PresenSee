@@ -28,3 +28,8 @@ test-results/
 .DS_Store
 .idea/
 .vscode/
+
+# Generated code and test output
+/web/src/generated/
+.vitest/
+next-env.d.ts

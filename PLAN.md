@@ -2,7 +2,7 @@
 
 PresenSee lets a person check their **own** online presence. They prove some photos are of them, then the app finds where those exact photos appear on the web, so they can spot fake profiles using their pictures. It is not a tool to look up other people.
 
-**Status: plan only. No code yet. Waiting for the owner's OK.**
+**Status: plan approved. Building step by step.**
 
 ## Changes from the original brief
 
@@ -36,8 +36,8 @@ The server picks three random moves (for example turn left, open mouth, smile) a
 - It stops: a printed photo, a still picture on a phone, a single pre-recorded video.
 - It does not stop: a fake camera feeding prepared video, or a live deepfake. No browser-only check can. This is an honest MVP-level check, not a certified one.
 
-**The selfie is kept in memory only, for up to 15 minutes.**
-Uploads come after the live check and must be compared with it, but the brief also says to delete selfie frames and never store face data. So: the challenge frames are dropped when the check ends. One reference frame stays in the face service's memory, never on disk and never in the database. After 15 minutes, or when the account is deleted, it is gone. To add photos later, the user repeats the live check.
+**The selfie: saved on local disk for now (testing only).**
+Uploads come after the live check and must be compared with it. For testing, the owner chose to keep one reference selfie frame in local storage (encrypted like the photos, setting `SELFIE_STORE=disk`). The challenge frames are still dropped when the check ends, and face data (embeddings) is still never stored. Before real users, switch to `SELFIE_STORE=memory`: the frame then lives only in the face service's memory for up to 15 minutes.
 
 **Image search.**
 A `ReverseImageSearchProvider` interface with a `MockProvider` first, chosen by `IMAGE_SEARCH_PROVIDER`. The server never downloads result images; the browser shows thumbnails straight from the link the provider gives.
@@ -65,7 +65,7 @@ The system disk is almost full, so the everyday command is `bash dev.sh`: Postgr
 |---|---|---|
 | Face match is 1-to-1 only; no face database | The face service can only compare an upload with that account's own live selfie. No route takes two arbitrary faces, enrols or searches faces. | Only the allowed routes exist; one account cannot use another's live session; no face-search library or face column anywhere. |
 | Never compare against search results | The server never downloads result images. | Search and results code never calls the face service. |
-| Compute, compare, throw away; no stored face data | Face data lives inside one request. The face service has a read-only file system. | After a full run, database and storage hold no selfie and no face data; the reference frame is gone after time-out and after delete. |
+| Compute, compare, throw away; no stored face data | Face data lives inside one request. The face service has a read-only file system. | After a full run, the database holds no face data; in `memory` mode nothing about the selfie is on disk; the reference frame is gone after time-out and after delete. |
 | Match runs on the server; no search without a pass | A photo is saved only after it passes. Search accepts only a saved photo owned by the account. | Search for a rejected, unknown or someone else's photo is refused and the provider is called zero times. |
 | Exactly one face, and it must match | Checked in the face service before anything is saved. | Zero or two faces are rejected; a rejected photo leaves no file and no record. |
 | No scraping; robots.txt; rate limited | One small module is the only code allowed to call outside sites: fixed address list, robots.txt check, delay per site, status only. | An address not on the list is refused; a forbidden site becomes a link-only row; delays hold. |
@@ -90,10 +90,10 @@ The system disk is almost full, so the everyday command is `bash dev.sh`: Postgr
 
 After each step: stop, say in plain words what was built and how to test it, and wait for "continue". Every change is committed and pushed.
 
-## Needs the owner's answer
+## Owner's decisions
 
-1. Is keeping one selfie frame in memory for up to 15 minutes acceptable?
-2. Is `bash dev.sh` as the everyday command acceptable, with full Docker kept for later?
-3. Is the split of 20 automatic and 14 link-only username sites acceptable?
+1. The reference selfie may be saved in local storage for now, for testing.
+2. `bash dev.sh` is the everyday command; full Docker comes later.
+3. Username check: 20 sites automatic, 14 link-only.
 
 This plan is not legal advice. Face data is sensitive under privacy law in many places; a lawyer should review the consent wording and the model-licence weak spot before real users are let in.
