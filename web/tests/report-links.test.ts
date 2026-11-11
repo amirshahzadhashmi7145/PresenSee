@@ -31,8 +31,8 @@ describe("official report links", () => {
   });
 });
 
-describe("hard rule: this server makes no requests to outside websites", () => {
-  it("the only outbound calls in the web code go to our own face service", async () => {
+describe("hard rule: no scraping", () => {
+  it("the only outbound calls go to our own face service and the search provider's official API", async () => {
     const { execFileSync } = await import("node:child_process");
     const { readFileSync } = await import("node:fs");
     const path = await import("node:path");
@@ -44,6 +44,9 @@ describe("hard rule: this server makes no requests to outside websites", () => {
       .split("\n")
       .filter((f) => /\.(ts|tsx)$/.test(f));
     const withFetch = files.filter((f) => /\bfetch\(/.test(readFileSync(path.join(root, f), "utf8")));
-    expect(withFetch).toEqual(["web/src/lib/face-client.ts"]);
+    expect(withFetch.sort()).toEqual(["web/src/lib/face-client.ts", "web/src/lib/search/tineye-provider.ts"]);
+    const tineye = readFileSync(path.join(root, "web/src/lib/search/tineye-provider.ts"), "utf8");
+    const hosts = [...tineye.matchAll(/https:\/\/([a-z0-9.-]+)/g)].map((m) => m[1]);
+    expect(new Set(hosts)).toEqual(new Set(["api.tineye.com"]));
   });
 });

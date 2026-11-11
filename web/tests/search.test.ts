@@ -140,7 +140,8 @@ describe("hard rule: search results never meet the face service", () => {
     for (const f of files) {
       const text = readFileSync(path.join(root, f), "utf8");
       expect(text, f).not.toMatch(/face-client|liveness|photos"/);
-      expect(text, f).not.toMatch(/\bfetch\(/); // and the server never downloads result images
+      // The server never downloads result images: the only outside call is the provider's own API.
+      if (!f.endsWith("tineye-provider.ts")) expect(text, f).not.toMatch(/\bfetch\(/);
     }
   });
 

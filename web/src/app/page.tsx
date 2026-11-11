@@ -1,4 +1,5 @@
 import { ConsentCard } from "@/components/consent-card";
+import { DeleteAccount } from "@/components/delete-account";
 import { LiveCheck } from "@/components/live-check";
 import { PhotosCard } from "@/components/photos-card";
 import { type PhotoResults, ResultsCard } from "@/components/results-card";
@@ -115,7 +116,10 @@ export default async function Home() {
       </div>
 
       {account ? (
-        <p className="mt-8 text-xs text-slate-400">Anonymous account …{account.id.slice(-6)}</p>
+        <>
+          <DeleteAccount />
+          <p className="mt-4 text-xs text-slate-400">Anonymous account …{account.id.slice(-6)}</p>
+        </>
       ) : null}
     </main>
   );

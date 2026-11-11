@@ -49,6 +49,9 @@ async function activePhotoCount(accountId: string): Promise<number> {
   return db.photo.count({ where: { accountId, fileDeletedAt: null } });
 }
 
+/** A photo past its 30 days is treated as gone even if the timer has not run yet. */
+const alive = (now: Date) => ({ fileDeletedAt: null, expiresAt: { gt: now } });
+
 export async function uploadPhoto(account: AccountLike, bytes: Buffer, deps: PhotoDeps): Promise<UploadOutcome> {
   const now = (deps.now ?? (() => new Date()))();
   if (!account.consentedAt) return { ok: false, reason: "consent_required" };
@@ -104,17 +107,17 @@ export async function uploadPhoto(account: AccountLike, bytes: Buffer, deps: Pho
   return { ok: true, photoId };
 }
 
-export async function listPhotos(accountId: string) {
+export async function listPhotos(accountId: string, now: Date = new Date()) {
   return db.photo.findMany({
-    where: { accountId, fileDeletedAt: null },
+    where: { accountId, ...alive(now) },
     orderBy: { createdAt: "asc" },
     select: { id: true, createdAt: true, expiresAt: true },
   });
 }
 
 /** The decrypted photo, for its owner only. */
-export async function readPhoto(accountId: string, photoId: string, storage: PhotoStorage) {
-  const photo = await db.photo.findFirst({ where: { id: photoId, accountId, fileDeletedAt: null } });
+export async function readPhoto(accountId: string, photoId: string, storage: PhotoStorage, now: Date = new Date()) {
+  const photo = await db.photo.findFirst({ where: { id: photoId, accountId, ...alive(now) } });
   if (!photo) return null;
   const bytes = await storage.get(photo.storageKey);
   return bytes ? { bytes, mimeType: photo.mimeType } : null;

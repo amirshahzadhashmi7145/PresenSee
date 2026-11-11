@@ -54,8 +54,8 @@ export function ConsentCard() {
 
       <h3 className="mt-5 font-semibold">How to delete</h3>
       <p className="mt-1 text-slate-700">
-        “Delete my account” removes every photo, result and record right away. (The button arrives
-        with the dashboard in a later step.)
+        “Delete my account”, at the bottom of the page, removes every photo, result and record
+        right away.
       </p>
 
       <label className="mt-6 flex items-start gap-3">

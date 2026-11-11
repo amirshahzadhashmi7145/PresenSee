@@ -49,8 +49,8 @@ describe("hard rule: secrets live in .env only", () => {
       .filter((f) => existsSync(path.join(root, f)));
     const offenders = files.filter((f) => {
       const text = readFileSync(path.join(root, f), "utf8");
-      // NODE_ENV is a built-in mode flag, not a secret or setting of ours.
-      return /process\.env(?!\.NODE_ENV)/.test(text);
+      // NODE_ENV and NEXT_RUNTIME are built-in flags, not secrets or settings of ours.
+      return /process\.env(?!\.NODE_ENV|\.NEXT_RUNTIME)/.test(text);
     });
     expect(offenders).toEqual([]);
   });
