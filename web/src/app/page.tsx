@@ -1,9 +1,12 @@
 import { ConsentCard } from "@/components/consent-card";
 import { LiveCheck } from "@/components/live-check";
 import { PhotosCard } from "@/components/photos-card";
+import { type PhotoResults, ResultsCard } from "@/components/results-card";
 import { StartAccount } from "@/components/start-account";
 import { currentPassedCheck } from "@/lib/liveness";
 import { MAX_PHOTOS, listPhotos } from "@/lib/photos";
+import { config } from "@/lib/config";
+import { MAX_SEARCHES_PER_DAY, resultsForAccount, searchesUsedToday } from "@/lib/search/service";
 import { getCurrentAccount } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -41,14 +44,32 @@ export default async function Home() {
   }
   const passed = account?.consentedAt ? await currentPassedCheck(account.id) : null;
   const photos = account?.consentedAt ? await listPhotos(account.id) : [];
-  const current = !account?.consentedAt ? 0 : passed || photos.length ? 2 : 1;
+  const runs = account && photos.length ? await resultsForAccount(account.id) : [];
+  const usedToday = account && photos.length ? await searchesUsedToday(account.id) : 0;
+  const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const photoResults: PhotoResults[] = photos.map((photo) => {
+    const latest = runs.find((run) => run.photoId === photo.id); // runs are newest first
+    return {
+      photoId: photo.id,
+      searchedAt: latest ? day(latest.createdAt) : null,
+      matches: (latest?.matches ?? []).map((m) => ({
+        id: m.id,
+        pageUrl: m.pageUrl,
+        siteName: m.siteName,
+        thumbnailUrl: m.thumbnailUrl,
+        foundDate: m.foundDate ? day(m.foundDate) : null,
+        tag: m.tag,
+      })),
+    };
+  });
+  const current = !account?.consentedAt ? 0 : runs.length ? 3 : passed || photos.length ? 2 : 1;
   const photoItems = photos.map((photo) => ({
     id: photo.id,
     expires: photo.expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
   }));
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-10">
+    <main className="mx-auto max-w-2xl px-4 py-10">
       <h1 className="text-3xl font-bold tracking-tight">PresenSee</h1>
       <p className="mt-2 text-slate-600">
         Check your own online presence and spot fake profiles using your photos.
@@ -72,6 +93,14 @@ export default async function Home() {
             ) : null}
             {passed || photos.length ? (
               <PhotosCard photos={photoItems} canUpload={Boolean(passed)} max={MAX_PHOTOS} />
+            ) : null}
+            {photos.length ? (
+              <ResultsCard
+                photos={photoResults}
+                usedToday={usedToday}
+                maxPerDay={MAX_SEARCHES_PER_DAY}
+                mock={config.imageSearchProvider === "mock"}
+              />
             ) : null}
             {!passed ? <LiveCheck /> : null}
           </div>
