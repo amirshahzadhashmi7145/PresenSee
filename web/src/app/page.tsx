@@ -3,15 +3,12 @@ import { LiveCheck } from "@/components/live-check";
 import { PhotosCard } from "@/components/photos-card";
 import { type PhotoResults, ResultsCard } from "@/components/results-card";
 import { StartAccount } from "@/components/start-account";
-import { type UsernameItem, UsernamesCard } from "@/components/usernames-card";
 import { currentPassedCheck } from "@/lib/liveness";
 import { MAX_PHOTOS, listPhotos } from "@/lib/photos";
 import { config } from "@/lib/config";
 import { MAX_SEARCHES_PER_DAY, resultsForAccount, searchesUsedToday } from "@/lib/search/service";
 import { GENERIC_REPORT_LINKS, reportLinkFor } from "@/lib/report-links";
 import { getCurrentAccount } from "@/lib/session";
-import { usernamesForAccount } from "@/lib/usernames/service";
-import { MAX_USERNAMES, SITES } from "@/lib/usernames/sites";
 
 export const dynamic = "force-dynamic";
 
@@ -54,25 +51,6 @@ export default async function Home() {
     const link = reportLinkFor(url);
     return link ? { platform: link.platform, url: link.url, note: link.note } : null;
   };
-  const siteName = new Map(SITES.map((site) => [site.id, site.name]));
-  const siteOrder = new Map(SITES.map((site, i) => [site.id, i]));
-  const usernames: UsernameItem[] = account?.consentedAt
-    ? (await usernamesForAccount(account.id)).map((u) => ({
-        id: u.id,
-        handle: u.handle,
-        rows: u.checks
-          .filter((c) => siteName.has(c.siteId))
-          .sort((a, b) => (siteOrder.get(a.siteId) ?? 0) - (siteOrder.get(b.siteId) ?? 0))
-          .map((c) => ({
-            id: c.id,
-            site: siteName.get(c.siteId) ?? c.siteId,
-            url: c.profileUrl,
-            status: c.status,
-            tag: c.tag,
-            report: report(c.profileUrl),
-          })),
-      }))
-    : [];
   const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   const photoResults: PhotoResults[] = photos.map((photo) => {
     const latest = runs.find((run) => run.photoId === photo.id); // runs are newest first
@@ -131,7 +109,6 @@ export default async function Home() {
                 fallbacks={GENERIC_REPORT_LINKS}
               />
             ) : null}
-            <UsernamesCard usernames={usernames} max={MAX_USERNAMES} fallbacks={GENERIC_REPORT_LINKS} />
             {!passed ? <LiveCheck /> : null}
           </div>
         )}

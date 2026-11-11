@@ -25,13 +25,6 @@ enum LivenessStatus {
   EXPIRED
 }
 
-enum ProfileStatus {
-  FOUND
-  NOT_FOUND
-  UNKNOWN
-  MANUAL
-}
-
 /// An anonymous account tied to one browser by a cookie (no sign-up yet).
 model Account {
   id          String    @id @default(cuid())
@@ -44,8 +37,6 @@ model Account {
   photos           Photo[]
   searchRuns       SearchRun[]
   imageMatches     ImageMatch[]
-  usernames        Username[]
-  profileChecks    ProfileCheck[]
 }
 
 /// One live selfie check. Stores the outcome only, never frames or face data.
@@ -109,35 +100,5 @@ model ImageMatch {
   foundDate    DateTime?
   tag          Tag       @default(UNTAGGED)
 
-  @@index([accountId])
-}
-
-/// One of the user's own handles (max 5 per account).
-model Username {
-  id        String   @id @default(cuid())
-  accountId String
-  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  handle    String
-  createdAt DateTime @default(now())
-
-  checks ProfileCheck[]
-
-  @@unique([accountId, handle])
-}
-
-/// Result of checking one handle on one site from the fixed list.
-model ProfileCheck {
-  id         String        @id @default(cuid())
-  accountId  String
-  account    Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  usernameId String
-  username   Username      @relation(fields: [usernameId], references: [id], onDelete: Cascade)
-  siteId     String
-  profileUrl String
-  status     ProfileStatus
-  tag        Tag           @default(UNTAGGED)
-  checkedAt  DateTime      @default(now())
-
-  @@unique([usernameId, siteId])
   @@index([accountId])
 }

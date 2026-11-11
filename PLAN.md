@@ -10,6 +10,7 @@ PresenSee lets a person check their **own** online presence. They prove some pho
 |---|---|
 | Name "SelfCheck" | **PresenSee** |
 | Email sign-up with a one-time code | **Skipped for now.** Opening the app creates an anonymous account tied to the browser (a cookie). Limits and "Delete my account" work on that account. Email sign-up can be added later on top of it. Until then the app is for local testing only, not for the public internet. |
+| Username check on about 30 sites | **Removed (owner's decision).** Presence is found by photos only. No handles are collected and no sites are requested. |
 | Tests written at the end | Tests for each hard rule are written **with** the step that builds it. Step 7 is a final check that none is missing. |
 
 ## The three parts
@@ -48,11 +49,6 @@ TinEye facts from its official docs (read 2026-11-11, double-checked by a second
 - Real results need a prepaid bundle. The smallest is US$200 for 5,000 searches.
 - TinEye's general terms forbid showing its results in an app it has not approved. The owner should get TinEye's written OK before real users see real results.
 
-**Username check.**
-Sites are only requested when their robots.txt allows it. Of 33 sites kept from 46 examined:
-- 19 are checked automatically, through an official API or the public profile address (GitHub, YouTube, Snapchat, Bluesky and others).
-- 14 are shown as an "open this link and look yourself" row, because their robots.txt forbids automatic checks: Instagram, Facebook, Threads, X, TikTok, LinkedIn, Pinterest, Reddit, Tumblr, Telegram, Twitch, Linktree, OnlyFans, Steam.
-
 **Photo storage.**
 Each file is encrypted with AES-256-GCM using a key from `.env`. Local disk now, S3-compatible later, behind one interface. A timer inside the web server deletes photos older than 30 days; the list of result links stays until the account is deleted.
 
@@ -68,9 +64,9 @@ The system disk is almost full, so the everyday command is `bash dev.sh`: Postgr
 | Compute, compare, throw away; no stored face data | Face data lives inside one request. The face service has a read-only file system. | After a full run, the database holds no face data; in `memory` mode nothing about the selfie is on disk; the reference frame is gone after time-out and after delete. |
 | Match runs on the server; no search without a pass | A photo is saved only after it passes. Search accepts only a saved photo owned by the account. | Search for a rejected, unknown or someone else's photo is refused and the provider is called zero times. |
 | Exactly one face, and it must match | Checked in the face service before anything is saved. | Zero or two faces are rejected; a rejected photo leaves no file and no record. |
-| No scraping; robots.txt; rate limited | One small module is the only code allowed to call outside sites: fixed address list, robots.txt check, delay per site, status only. | An address not on the list is refused; a forbidden site becomes a link-only row; delays hold. |
-| No signup or password-reset probing | The address list contains public profile paths only. | No listed address contains signup, login or reset paths. |
-| Limits: 5 photos, 5 usernames, 20 searches a day | Counted in the database together with the action. | The 6th photo, 6th username and 21st search are refused; the count resets the next day. |
+| No scraping | Results come only from the search provider. The web server makes no requests to outside websites at all. | The only outbound calls in the web code go to our own face service. |
+| No signup or password-reset probing | The app requests no outside pages and collects no emails or handles. | Same test as above. |
+| Limits: 5 photos, 20 searches a day | Counted in the database together with the action. | The 6th photo and 21st search are refused; the count resets the next day. |
 | Encrypt photos; delete after 30 days | The storage layer has no way to save unencrypted. | The stored file is not a readable image and a changed file fails to open; a 30-day-old photo is deleted and a 29-day-old one is kept. |
 | No image or face data in logs | One logger that accepts only short listed fields. | Logs captured over a full run contain no image bytes and no face data. |
 | Secrets in `.env` only | Settings are read in one place; `.env` is git-ignored. | Every setting the code reads is in `.env.example`; `.env` is not in git. |
@@ -84,7 +80,7 @@ The system disk is almost full, so the everyday command is `bash dev.sh`: Postgr
 2. Consent screen and live selfie check.
 3. Photo upload with the match gate, encrypted storage, 5-photo limit.
 4. Search with `MockProvider`, results dashboard with Mine / Fake / Ignore tags, 20-a-day limit.
-5. Username check and official report links.
+5. Official report links for results tagged Fake. (Username check removed.)
 6. `TinEyeProvider` (docs re-read first), auto-delete job, account deletion.
 7. Final check that every hard rule has a test, plus the README.
 
@@ -94,6 +90,6 @@ After each step: stop, say in plain words what was built and how to test it, and
 
 1. The reference selfie may be saved in local storage for now, for testing.
 2. `bash dev.sh` is the everyday command; full Docker comes later.
-3. Username check: 19 sites automatic, 14 link-only.
+3. No username check. Presence is found by photos only.
 
 This plan is not legal advice. Face data is sensitive under privacy law in many places; a lawyer should review the consent wording and the model-licence weak spot before real users are let in.

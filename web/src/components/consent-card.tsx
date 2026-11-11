@@ -32,7 +32,6 @@ export function ConsentCard() {
       <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700">
         <li>A short live selfie from your camera, to prove you are a real person.</li>
         <li>Up to 5 photos of you that you choose to upload.</li>
-        <li>Up to 5 of your own usernames, if you want them checked.</li>
       </ul>
 
       <h3 className="mt-5 font-semibold">Why</h3>
