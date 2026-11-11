@@ -30,8 +30,10 @@ def test_only_the_allowed_routes_exist(env) -> None:
         ("DELETE", "/liveness/account/{account_id}"),
         ("GET", "/health"),
         ("GET", "/liveness/{session_id}/reference"),
+        ("POST", "/liveness/restore"),
         ("POST", "/liveness/start"),
         ("POST", "/liveness/{session_id}/step"),
+        ("POST", "/match"),
     ]
 
 

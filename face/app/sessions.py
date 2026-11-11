@@ -56,6 +56,27 @@ class SessionStore:
             return None
         return session
 
+    def passed_for_account(self, account_id: str) -> Session | None:
+        """The account's own passed live check, if it is still valid."""
+        self.sweep()
+        for session in self._sessions.values():
+            if (
+                session.status == "passed"
+                and session.reference_jpeg is not None
+                and secrets.compare_digest(session.account_id, account_id)
+            ):
+                return session
+        return None
+
+    def restore(self, account_id: str, reference_jpeg: bytes) -> Session:
+        """Testing only: put back a passed check from the saved reference selfie."""
+        session = self.create(account_id, [])
+        session.status = "passed"
+        session.passed_at = self.now()
+        session.reference_jpeg = reference_jpeg
+        session.reference_handed_out = True
+        return session
+
     def drop(self, session_id: str) -> None:
         session = self._sessions.pop(session_id, None)
         if session is not None:

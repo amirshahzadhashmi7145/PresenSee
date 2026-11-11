@@ -1,7 +1,9 @@
 import { ConsentCard } from "@/components/consent-card";
 import { LiveCheck } from "@/components/live-check";
+import { PhotosCard } from "@/components/photos-card";
 import { StartAccount } from "@/components/start-account";
 import { currentPassedCheck } from "@/lib/liveness";
+import { MAX_PHOTOS, listPhotos } from "@/lib/photos";
 import { getCurrentAccount } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +40,12 @@ export default async function Home() {
     databaseOk = false;
   }
   const passed = account?.consentedAt ? await currentPassedCheck(account.id) : null;
-  const current = !account?.consentedAt ? 0 : passed ? 2 : 1;
+  const photos = account?.consentedAt ? await listPhotos(account.id) : [];
+  const current = !account?.consentedAt ? 0 : passed || photos.length ? 2 : 1;
+  const photoItems = photos.map((photo) => ({
+    id: photo.id,
+    expires: photo.expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+  }));
 
   return (
     <main className="mx-auto max-w-xl px-4 py-10">
@@ -55,17 +62,19 @@ export default async function Home() {
           <StartAccount />
         ) : !account.consentedAt ? (
           <ConsentCard />
-        ) : !passed ? (
-          <LiveCheck />
         ) : (
-          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
-            <h2 className="text-xl font-semibold text-emerald-900">✓ Live check passed</h2>
-            <p className="mt-2 text-emerald-900">
-              It stays valid until{" "}
-              {passed.expiresAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}.
-              Next comes uploading your photos (built in the next step).
-            </p>
-          </section>
+          <div className="space-y-6">
+            {passed ? (
+              <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                ✓ Live check passed. You can add photos until{" "}
+                {passed.expiresAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}.
+              </p>
+            ) : null}
+            {passed || photos.length ? (
+              <PhotosCard photos={photoItems} canUpload={Boolean(passed)} max={MAX_PHOTOS} />
+            ) : null}
+            {!passed ? <LiveCheck /> : null}
+          </div>
         )}
       </div>
 

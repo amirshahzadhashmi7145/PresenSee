@@ -39,6 +39,14 @@ class FakeFace implements FaceClient {
   async forgetAccount(): Promise<void> {
     this.calls.push("forget");
   }
+  async matchPhoto(): Promise<{ result: "no_live_check" }> {
+    this.calls.push("match");
+    return { result: "no_live_check" };
+  }
+  async restoreReference(): Promise<boolean> {
+    this.calls.push("restore");
+    return false;
+  }
 }
 
 class FakeStorage implements PhotoStorage {

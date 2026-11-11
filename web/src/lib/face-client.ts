@@ -18,7 +18,16 @@ export type StepResult =
   | { result: "passed" }
   | { result: "failed"; reason: string };
 
+export type MatchResult =
+  | { result: "match" }
+  | { result: "rejected"; reason: string }
+  | { result: "no_live_check" };
+
 export interface FaceClient {
+  /** Compare ONE upload with this account's own live selfie. */
+  matchPhoto(accountId: string, photo: Blob): Promise<MatchResult>;
+  /** Testing only (SELFIE_STORE=disk): give the saved reference selfie back after a restart. */
+  restoreReference(accountId: string, reference: Buffer): Promise<boolean>;
   startLiveness(accountId: string): Promise<ChallengeView>;
   stepLiveness(sessionId: string, accountId: string, frames: Blob[]): Promise<StepResult | null>;
   fetchReference(sessionId: string, accountId: string): Promise<Buffer | null>;
@@ -67,6 +76,29 @@ export const faceClient: FaceClient = {
     );
     if (!res.ok) return null;
     return Buffer.from(await res.arrayBuffer());
+  },
+
+  async matchPhoto(accountId, photo) {
+    const form = new FormData();
+    form.set("account_id", accountId);
+    form.set("photo", photo, "photo");
+    const res = await fetch(url("/match"), { method: "POST", headers: headers(), body: form, cache: "no-store" });
+    if (res.status === 409) return { result: "no_live_check" };
+    if (!res.ok) throw new Error(`face service error ${res.status}`);
+    return (await res.json()) as MatchResult;
+  },
+
+  async restoreReference(accountId, reference) {
+    const form = new FormData();
+    form.set("account_id", accountId);
+    form.set("reference", new Blob([new Uint8Array(reference)], { type: "image/jpeg" }), "reference.jpg");
+    const res = await fetch(url("/liveness/restore"), {
+      method: "POST",
+      headers: headers(),
+      body: form,
+      cache: "no-store",
+    });
+    return res.ok;
   },
 
   async forgetAccount(accountId) {

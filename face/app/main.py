@@ -6,7 +6,7 @@ bodies, images or face data.
 
 It can do exactly two things with faces:
   1. the live check (frames from one camera session), and
-  2. (added in step 3) compare one upload with that same account's live selfie.
+  2. compare one upload with that same account's own live selfie.
 There is no route that compares two arbitrary faces, enrols a face or searches faces.
 """
 
@@ -25,6 +25,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("face")
 
 MAX_FRAME_BYTES = 300_000
+MAX_PHOTO_BYTES = 10 * 1024 * 1024
 
 
 def require_secret(x_face_secret: str | None = Header(default=None)) -> None:
@@ -154,6 +155,56 @@ def liveness_reference(session_id: str, account_id: str) -> Response:
         raise HTTPException(status_code=404, detail="already taken")
     session.reference_handed_out = True
     return Response(content=session.reference_jpeg, media_type="image/jpeg")
+
+
+@app.post("/liveness/restore")
+async def liveness_restore(
+    account_id: Annotated[str, Form()],
+    reference: Annotated[UploadFile, File()],
+) -> dict:
+    """Testing only (SELFIE_STORE=disk): after a restart, the web server gives back
+    the account's own saved reference selfie so uploads can still be compared."""
+    if selfie_store() != "disk":
+        raise HTTPException(status_code=404, detail="not available")
+    data = await reference.read(MAX_FRAME_BYTES + 1)
+    if len(data) > MAX_FRAME_BYTES:
+        raise HTTPException(status_code=413, detail="too big")
+    count, _ = get_engine().embed(data)
+    if count != 1:
+        raise HTTPException(status_code=422, detail="reference not usable")
+    get_sessions().restore(account_id, data)
+    return {"ok": True}
+
+
+@app.post("/match")
+async def match(
+    account_id: Annotated[str, Form()],
+    photo: Annotated[UploadFile, File()],
+) -> dict:
+    """Does this upload show exactly one face, and is it the same person as this
+    account's own live selfie? The answer is yes or no. No score, no face data,
+    and nothing is kept: both sets of face numbers die when this function ends."""
+    session = get_sessions().passed_for_account(account_id)
+    if session is None or session.reference_jpeg is None:
+        raise HTTPException(status_code=409, detail="no_live_check")
+    data = await photo.read(MAX_PHOTO_BYTES + 1)
+    if len(data) > MAX_PHOTO_BYTES:
+        return {"result": "rejected", "reason": "too_big"}
+
+    engine = get_engine()
+    count, upload_face = engine.embed(data)
+    del data
+    if count == 0:
+        return {"result": "rejected", "reason": "no_face"}
+    if count > 1 or upload_face is None:
+        return {"result": "rejected", "reason": "more_than_one_face"}
+    _, selfie_face = engine.embed(session.reference_jpeg)
+    if selfie_face is None:
+        raise HTTPException(status_code=409, detail="no_live_check")
+    same = engine.same_person(selfie_face, upload_face)
+    del upload_face, selfie_face
+    log.info("match checked result=%s", "match" if same else "not_same_person")
+    return {"result": "match"} if same else {"result": "rejected", "reason": "not_same_person"}
 
 
 @app.delete("/liveness/account/{account_id}")
