@@ -2,7 +2,7 @@
 
 PresenSee lets a person check their **own** online presence. They prove some photos are of them, then the app finds where those exact photos appear on the web, so they can spot fake profiles using their pictures. It is not a tool to look up other people.
 
-**Status: plan approved. Building step by step.**
+**Status: all 7 steps built.** See `README.md` for how to run it and what is left before real users.
 
 ## Changes from the original brief
 
@@ -53,7 +53,7 @@ TinEye facts from its official docs (read 2026-11-11, double-checked by a second
 Each file is encrypted with AES-256-GCM using a key from `.env`. Local disk now, S3-compatible later, behind one interface. A timer inside the web server deletes photos older than 30 days; the list of result links stays until the account is deleted.
 
 **Running it on this machine.**
-The system disk is almost full, so the everyday command is `bash dev.sh`: PostgreSQL runs in Docker (the image is already here) and the web and face parts run directly from the project drive, with all their heavy files kept on that drive. `docker compose --profile full up` runs everything in Docker, for a machine with free disk space. The camera works on `http://localhost:3000` without HTTPS.
+The system disk is almost full, so the everyday command is `bash dev.sh`: PostgreSQL runs in Docker (the image is already here) and the web and face parts run directly from the project drive, with all their heavy files kept on that drive. `bash full.sh` runs everything in Docker. The camera works on `http://localhost:3000` without HTTPS.
 
 ## Hard rules — how each is enforced and tested
 

@@ -1,7 +1,8 @@
 name: presensee
 
-# Only the database runs in Docker for now. The web and face parts run
-# directly on the machine through `bash dev.sh`.
+# Two ways to run:
+#   bash dev.sh                              database here, web + face directly on the machine
+#   docker compose --profile full up --build everything in Docker
 services:
   db:
     image: postgres:16-alpine
@@ -13,11 +14,55 @@ services:
       - "127.0.0.1:${PG_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks: [default, private]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 2s
       timeout: 3s
       retries: 30
 
+  face:
+    profiles: ["full"]
+    build: ./face
+    environment:
+      FACE_SERVICE_SECRET: ${FACE_SERVICE_SECRET}
+      SELFIE_STORE: ${SELFIE_STORE:-memory}
+    # The face service cannot write files and cannot reach the internet.
+    read_only: true
+    tmpfs: ["/tmp"]
+    networks: [private]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+
+  web:
+    profiles: ["full"]
+    build: ./web
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      FACE_SERVICE_URL: http://face:8000
+      FACE_SERVICE_SECRET: ${FACE_SERVICE_SECRET}
+      STORAGE_DIR: /data/storage
+      PHOTO_ENC_KEY_K1: ${PHOTO_ENC_KEY_K1}
+      PHOTO_ENC_ACTIVE_KEY_ID: ${PHOTO_ENC_ACTIVE_KEY_ID}
+      SELFIE_STORE: ${SELFIE_STORE:-memory}
+      IMAGE_SEARCH_PROVIDER: ${IMAGE_SEARCH_PROVIDER:-mock}
+      TINEYE_API_KEY: ${TINEYE_API_KEY:-}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    volumes:
+      - photos:/data/storage
+    networks: [default, private]
+    depends_on:
+      db:
+        condition: service_healthy
+      face:
+        condition: service_started
+
+networks:
+  # No way out to the internet from this network.
+  private:
+    internal: true
+
 volumes:
   pgdata:
+  photos:
