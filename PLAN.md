@@ -49,8 +49,8 @@ TinEye facts from its official docs (read 2026-11-11, double-checked by a second
 - TinEye's general terms forbid showing its results in an app it has not approved. The owner should get TinEye's written OK before real users see real results.
 
 **Username check.**
-Sites are only requested when their robots.txt allows it. Of 34 sites kept from 46 examined:
-- 20 are checked automatically, through an official API or the public profile address (GitHub, YouTube, Snapchat, Bluesky and others).
+Sites are only requested when their robots.txt allows it. Of 33 sites kept from 46 examined:
+- 19 are checked automatically, through an official API or the public profile address (GitHub, YouTube, Snapchat, Bluesky and others).
 - 14 are shown as an "open this link and look yourself" row, because their robots.txt forbids automatic checks: Instagram, Facebook, Threads, X, TikTok, LinkedIn, Pinterest, Reddit, Tumblr, Telegram, Twitch, Linktree, OnlyFans, Steam.
 
 **Photo storage.**
@@ -94,6 +94,6 @@ After each step: stop, say in plain words what was built and how to test it, and
 
 1. The reference selfie may be saved in local storage for now, for testing.
 2. `bash dev.sh` is the everyday command; full Docker comes later.
-3. Username check: 20 sites automatic, 14 link-only.
+3. Username check: 19 sites automatic, 14 link-only.
 
 This plan is not legal advice. Face data is sensitive under privacy law in many places; a lawyer should review the consent wording and the model-licence weak spot before real users are let in.

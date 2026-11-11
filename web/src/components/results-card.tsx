@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { type ReportInfo, ReportBox, type Tag, TagButtons } from "@/components/tagging";
 
 export interface MatchItem {
   id: string;
@@ -9,7 +10,8 @@ export interface MatchItem {
   siteName: string;
   thumbnailUrl: string | null;
   foundDate: string | null;
-  tag: "UNTAGGED" | "MINE" | "FAKE" | "IGNORE";
+  tag: Tag;
+  report: ReportInfo | null;
 }
 
 export interface PhotoResults {
@@ -17,13 +19,6 @@ export interface PhotoResults {
   searchedAt: string | null;
   matches: MatchItem[];
 }
-
-const TAG_STYLE: Record<string, string> = {
-  MINE: "bg-emerald-600 text-white border-emerald-600",
-  FAKE: "bg-red-600 text-white border-red-600",
-  IGNORE: "bg-slate-500 text-white border-slate-500",
-};
-const TAG_LABEL = { MINE: "Mine", FAKE: "Fake", IGNORE: "Ignore" } as const;
 
 const REASON_TEXT: Record<string, string> = {
   daily_limit: "You have used all 20 searches for today. Try again tomorrow.",
@@ -41,11 +36,13 @@ export function ResultsCard({
   usedToday,
   maxPerDay,
   mock,
+  fallbacks,
 }: {
   photos: PhotoResults[];
   usedToday: number;
   maxPerDay: number;
   mock: boolean;
+  fallbacks: ReportInfo[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -61,11 +58,11 @@ export function ResultsCard({
     router.refresh();
   }
 
-  async function tag(matchId: string, current: string, next: string) {
+  async function tag(matchId: string, next: Tag) {
     await fetch(`/api/matches/${matchId}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ tag: current === next ? "UNTAGGED" : next }),
+      body: JSON.stringify({ tag: next }),
     }).catch(() => null);
     router.refresh();
   }
@@ -115,7 +112,8 @@ export function ResultsCard({
                 {photo.matches.map((match) => {
                   const thumb = safeThumb(match.thumbnailUrl);
                   return (
-                    <li key={match.id} className="flex items-center gap-3 rounded-lg border border-slate-200 p-2">
+                    <li key={match.id} className="rounded-lg border border-slate-200 p-2">
+                      <div className="flex items-center gap-3">
                       {thumb ? (
                         // Loaded by your browser straight from the provider's link; our server never downloads it.
                         // eslint-disable-next-line @next/next/no-img-element
@@ -130,20 +128,9 @@ export function ResultsCard({
                         </a>
                         <div className="text-xs text-slate-500">{match.foundDate ? `First seen ${match.foundDate}` : "Date not known"}</div>
                       </div>
-                      <div className="flex shrink-0 gap-1">
-                        {(["MINE", "FAKE", "IGNORE"] as const).map((name) => (
-                          <button
-                            key={name}
-                            type="button"
-                            onClick={() => tag(match.id, match.tag, name)}
-                            className={`rounded-md border px-2 py-1 text-xs font-medium ${
-                              match.tag === name ? TAG_STYLE[name] : "border-slate-300 text-slate-700"
-                            }`}
-                          >
-                            {TAG_LABEL[name]}
-                          </button>
-                        ))}
+                      <TagButtons tag={match.tag} onTag={(next) => tag(match.id, next)} />
                       </div>
+                      {match.tag === "FAKE" ? <ReportBox report={match.report} fallbacks={fallbacks} /> : null}
                     </li>
                   );
                 })}
