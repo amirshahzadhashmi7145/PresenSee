@@ -2,6 +2,8 @@
 # hoisted = plain folders in node_modules, no symlinks. Turbopack could not
 # follow pnpm's long symlinks on this NTFS drive.
 nodeLinker: hoisted
+# Keep this project's package store inside the repo folder (git-ignored).
+storeDir: ../.pnpm-store
 allowBuilds:
   prisma: true
   "@prisma/engines": true
