@@ -5,6 +5,10 @@ description = "PresenSee face service: face count, live check and 1-to-1 match. 
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi>=0.115",
+    "mediapipe==0.10.31",
+    "numpy>=2,<3",
+    "opencv-python-headless>=4.10,<5",
+    "python-multipart>=0.0.9",
     "uvicorn>=0.30",
 ]
 

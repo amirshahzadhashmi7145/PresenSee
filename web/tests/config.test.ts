@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -40,9 +40,13 @@ describe("hard rule: secrets live in .env only", () => {
   });
 
   it("only config.ts reads process.env for settings", () => {
-    const files = execFileSync("git", ["ls-files", "web/src"], { cwd: root, encoding: "utf8" })
+    const files = execFileSync("git", ["ls-files", "-co", "--exclude-standard", "web/src"], {
+      cwd: root,
+      encoding: "utf8",
+    })
       .split("\n")
-      .filter((f) => /\.(ts|tsx)$/.test(f) && f !== "web/src/lib/config.ts");
+      .filter((f) => /\.(ts|tsx)$/.test(f) && f !== "web/src/lib/config.ts")
+      .filter((f) => existsSync(path.join(root, f)));
     const offenders = files.filter((f) => {
       const text = readFileSync(path.join(root, f), "utf8");
       // NODE_ENV is a built-in mode flag, not a secret or setting of ours.

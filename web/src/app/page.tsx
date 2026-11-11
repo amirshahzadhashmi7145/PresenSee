@@ -1,67 +1,77 @@
-import { db } from "@/lib/db";
-import { faceServiceHealthy } from "@/lib/face-client";
+import { ConsentCard } from "@/components/consent-card";
+import { LiveCheck } from "@/components/live-check";
+import { StartAccount } from "@/components/start-account";
+import { currentPassedCheck } from "@/lib/liveness";
 import { getCurrentAccount } from "@/lib/session";
-import { StartAccount } from "./start-account";
 
 export const dynamic = "force-dynamic";
 
-function Row({ label, ok, detail }: { label: string; ok: boolean; detail: string }) {
+function Steps({ current }: { current: number }) {
+  const names = ["Consent", "Live check", "Photos", "Results"];
   return (
-    <li className="flex items-center justify-between gap-4 py-3">
-      <span className="font-medium">{label}</span>
-      <span className={ok ? "text-emerald-700" : "text-red-700"}>
-        {ok ? "✓" : "✗"} {detail}
-      </span>
-    </li>
+    <ol className="mt-6 flex flex-wrap gap-2 text-sm">
+      {names.map((name, i) => (
+        <li
+          key={name}
+          className={
+            i < current
+              ? "rounded-full bg-emerald-100 px-3 py-1 text-emerald-800"
+              : i === current
+                ? "rounded-full bg-slate-900 px-3 py-1 text-white"
+                : "rounded-full bg-slate-200 px-3 py-1 text-slate-600"
+          }
+        >
+          {i < current ? "✓ " : `${i + 1}. `}
+          {name}
+        </li>
+      ))}
+    </ol>
   );
 }
 
 export default async function Home() {
-  let databaseOk = true;
   let account = null;
+  let databaseOk = true;
   try {
     account = await getCurrentAccount();
   } catch {
     databaseOk = false;
   }
-  const faceOk = await faceServiceHealthy();
-  const accountCount = databaseOk ? await db.account.count().catch(() => 0) : 0;
+  const passed = account?.consentedAt ? await currentPassedCheck(account.id) : null;
+  const current = !account?.consentedAt ? 0 : passed ? 2 : 1;
 
   return (
-    <main className="mx-auto max-w-xl px-4 py-12">
+    <main className="mx-auto max-w-xl px-4 py-10">
       <h1 className="text-3xl font-bold tracking-tight">PresenSee</h1>
       <p className="mt-2 text-slate-600">
         Check your own online presence and spot fake profiles using your photos.
       </p>
+      <Steps current={current} />
 
-      <section className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Step 1 status
-        </h2>
-        <ul className="mt-2 divide-y divide-slate-100">
-          <Row label="Web app" ok detail="running" />
-          <Row label="Database" ok={databaseOk} detail={databaseOk ? "connected" : "not reachable"} />
-          <Row label="Face service" ok={faceOk} detail={faceOk ? "connected" : "not reachable"} />
-          <Row
-            label="Your account"
-            ok={Boolean(account)}
-            detail={account ? `anonymous · …${account.id.slice(-6)}` : "not created yet"}
-          />
-        </ul>
-        {databaseOk && !account ? (
-          <div className="mt-3">
-            <StartAccount />
-          </div>
-        ) : null}
-        <p className="mt-4 text-xs text-slate-500">
-          Accounts in this database: {accountCount}. No sign-up yet: the account is tied to this
-          browser by a cookie.
-        </p>
-      </section>
+      <div className="mt-6">
+        {!databaseOk ? (
+          <p className="text-red-700">The database is not reachable. Is `bash dev.sh` running?</p>
+        ) : !account ? (
+          <StartAccount />
+        ) : !account.consentedAt ? (
+          <ConsentCard />
+        ) : !passed ? (
+          <LiveCheck />
+        ) : (
+          <section className="rounded-xl border border-emerald-200 bg-emerald-50 p-6">
+            <h2 className="text-xl font-semibold text-emerald-900">✓ Live check passed</h2>
+            <p className="mt-2 text-emerald-900">
+              It stays valid until{" "}
+              {passed.expiresAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}.
+              Next comes uploading your photos (built in the next step).
+            </p>
+          </section>
+        )}
+      </div>
 
-      <p className="mt-6 text-sm text-slate-500">
-        Next: the consent screen and the live selfie check.
-      </p>
+      {account ? (
+        <p className="mt-8 text-xs text-slate-400">Anonymous account …{account.id.slice(-6)}</p>
+      ) : null}
     </main>
   );
 }

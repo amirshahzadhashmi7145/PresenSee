@@ -7,6 +7,9 @@ set -euo pipefail
 echo "Starting the database..."
 docker compose -f "$ROOT/compose.yaml" up -d --wait db
 
+echo "Checking the face models..."
+bash "$ROOT/scripts/get-models.sh"
+
 echo "Preparing the web app..."
 pnpm -C "$ROOT/web" install
 pnpm -C "$ROOT/web" exec prisma generate

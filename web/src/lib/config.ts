@@ -27,6 +27,13 @@ export const config = {
   get photoEncActiveKeyId() {
     return required("PHOTO_ENC_ACTIVE_KEY_ID");
   },
+  /** Raw 32-byte key for a key id, e.g. PHOTO_ENC_KEY_K1. */
+  photoEncKey(keyId: string): Buffer {
+    if (!/^[A-Z0-9]{1,16}$/.test(keyId)) throw new Error("Bad key id");
+    const key = Buffer.from(required(`PHOTO_ENC_KEY_${keyId}`), "base64");
+    if (key.length !== 32) throw new Error(`PHOTO_ENC_KEY_${keyId} must be 32 bytes in base64`);
+    return key;
+  },
   get selfieStore() {
     return optional("SELFIE_STORE", "memory");
   },
