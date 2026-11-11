@@ -33,3 +33,6 @@ test-results/
 /web/src/generated/
 .vitest/
 next-env.d.ts
+
+# Damaged leftovers moved aside (safe to delete after a disk check)
+/.broken/

@@ -1,0 +1,19 @@
+[project]
+name = "presensee-face"
+version = "0.1.0"
+description = "PresenSee face service: face count, live check and 1-to-1 match. Stores nothing."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "httpx2>=2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

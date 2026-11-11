@@ -1,0 +1,143 @@
+// PresenSee database. It holds records only.
+// HARD RULE: no table or column here may ever hold photos, selfie frames or
+// face data (embeddings). Photos live encrypted in file storage.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Tag {
+  UNTAGGED
+  MINE
+  FAKE
+  IGNORE
+}
+
+enum LivenessStatus {
+  PENDING
+  PASSED
+  FAILED
+  EXPIRED
+}
+
+enum ProfileStatus {
+  FOUND
+  NOT_FOUND
+  UNKNOWN
+  MANUAL
+}
+
+/// An anonymous account tied to one browser by a cookie (no sign-up yet).
+model Account {
+  id          String    @id @default(cuid())
+  /// SHA-256 of the cookie token. The token itself is never stored.
+  tokenHash   String    @unique
+  createdAt   DateTime  @default(now())
+  consentedAt DateTime?
+
+  livenessSessions LivenessSession[]
+  photos           Photo[]
+  searchRuns       SearchRun[]
+  imageMatches     ImageMatch[]
+  usernames        Username[]
+  profileChecks    ProfileCheck[]
+}
+
+/// One live selfie check. Stores the outcome only, never frames or face data.
+model LivenessSession {
+  id        String         @id @default(cuid())
+  accountId String
+  account   Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  status    LivenessStatus @default(PENDING)
+  createdAt DateTime       @default(now())
+  expiresAt DateTime
+  passedAt  DateTime?
+
+  @@index([accountId])
+}
+
+/// A photo that PASSED the face match. Rejected photos never get a row.
+model Photo {
+  id            String    @id @default(cuid())
+  accountId     String
+  account       Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  /// Where the encrypted file is in storage.
+  storageKey    String    @unique
+  mimeType      String
+  verifiedAt    DateTime
+  createdAt     DateTime  @default(now())
+  /// createdAt + 30 days. The file is deleted at this time.
+  expiresAt     DateTime
+  fileDeletedAt DateTime?
+
+  searchRuns SearchRun[]
+
+  @@index([accountId])
+  @@index([expiresAt])
+}
+
+/// One reverse image search call. Counted for the 20-a-day limit.
+model SearchRun {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  photoId   String
+  photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  provider  String
+  createdAt DateTime @default(now())
+
+  matches ImageMatch[]
+
+  @@index([accountId, createdAt])
+}
+
+/// One page where the photo was found. Links and text only.
+model ImageMatch {
+  id           String    @id @default(cuid())
+  accountId    String
+  account      Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  searchRunId  String
+  searchRun    SearchRun @relation(fields: [searchRunId], references: [id], onDelete: Cascade)
+  pageUrl      String
+  siteName     String
+  thumbnailUrl String?
+  foundDate    DateTime?
+  tag          Tag       @default(UNTAGGED)
+
+  @@index([accountId])
+}
+
+/// One of the user's own handles (max 5 per account).
+model Username {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  handle    String
+  createdAt DateTime @default(now())
+
+  checks ProfileCheck[]
+
+  @@unique([accountId, handle])
+}
+
+/// Result of checking one handle on one site from the fixed list.
+model ProfileCheck {
+  id         String        @id @default(cuid())
+  accountId  String
+  account    Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  usernameId String
+  username   Username      @relation(fields: [usernameId], references: [id], onDelete: Cascade)
+  siteId     String
+  profileUrl String
+  status     ProfileStatus
+  tag        Tag           @default(UNTAGGED)
+  checkedAt  DateTime      @default(now())
+
+  @@unique([usernameId, siteId])
+  @@index([accountId])
+}

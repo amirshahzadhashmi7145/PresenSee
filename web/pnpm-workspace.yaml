@@ -1,0 +1,7 @@
+# pnpm settings for this single app (pnpm 12 reads settings from here).
+# hoisted = plain folders in node_modules, no symlinks. Turbopack could not
+# follow pnpm's long symlinks on this NTFS drive.
+nodeLinker: hoisted
+allowBuilds:
+  prisma: true
+  "@prisma/engines": true
