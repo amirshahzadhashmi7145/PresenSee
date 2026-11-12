@@ -7,6 +7,7 @@ import type { ImageMatchResult, ReverseImageSearchProvider, SearchImage } from "
 
 const SITES: { siteName: string; url: (handle: string) => string }[] = [
   { siteName: "instagram.com", url: (h) => `https://www.instagram.com/${h}/` },
+  { siteName: "instagram.com", url: (h) => `https://www.instagram.com/${h}/` },
   { siteName: "facebook.com", url: (h) => `https://www.facebook.com/${h}` },
   { siteName: "x.com", url: (h) => `https://x.com/${h}` },
   { siteName: "tiktok.com", url: (h) => `https://www.tiktok.com/@${h}` },
@@ -43,6 +44,7 @@ export class MockProvider implements ReverseImageSearchProvider {
         thumbnailUrl: thumbnail(site.siteName.split(".")[0], (digest[20 + i] * 360) / 256),
         // Every third result has no date, like real providers.
         foundDate: i % 3 === 2 ? undefined : new Date(Date.UTC(2026, 10, 1) - daysAgo * 86_400_000),
+        score: 55 + (digest[25 + i] % 46), // 55 to 100
       });
     }
     return results;

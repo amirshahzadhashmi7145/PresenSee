@@ -10,10 +10,11 @@ It is a self-check tool. It is not a tool to look up other people.
 
 1. **Consent.** A plain-language screen says what is collected, why, and how to delete it. Nothing else works until you agree.
 2. **Live selfie check.** Your camera opens and the server asks for 3 random moves (turn left, turn right, open mouth, smile). A still photo cannot pass.
-3. **Upload photos** (up to 5). Each must show exactly one face, and that face must match your live selfie. A photo that fails is rejected and never saved.
-4. **Search.** Each accepted photo is sent to a reverse image search provider. You get the pages where it appears: link, site, thumbnail, and date when known.
-5. **Tag** each result as Mine, Fake or Ignore. For Fake you get the official report page of that platform.
-6. **Delete my account** wipes every photo, result and record right away.
+3. **Upload photos or take them with your camera** (up to 5). Each must show exactly one face, and that face must match your live selfie. A photo that fails is rejected and never saved.
+4. **Search.** Each accepted photo is sent to a reverse image search provider. You get the pages where it appears: link, site, thumbnail, match strength, and date when known.
+5. **Your internet presence.** The results are rolled up into the profiles (platform and name) and websites that use your photos. This is worked out from the result links only; no page is visited.
+6. **Tag** each result as Mine, Fake or Ignore. For Fake you get the official report page of that platform.
+7. **Delete my account** wipes every photo, result and record right away.
 
 ## Run it
 

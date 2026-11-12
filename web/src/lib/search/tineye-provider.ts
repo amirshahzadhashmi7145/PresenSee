@@ -19,6 +19,7 @@ interface TinEyeBacklink {
   crawl_date?: string;
 }
 interface TinEyeMatch {
+  score?: number;
   domain?: string;
   image_url?: string;
   backlinks?: TinEyeBacklink[];
@@ -74,6 +75,7 @@ export class TinEyeProvider implements ReverseImageSearchProvider {
           // TinEye's own small copy of the result image; shown by the browser, never fetched by us.
           thumbnailUrl: match.image_url,
           foundDate: date && !Number.isNaN(date.getTime()) ? date : undefined,
+          score: typeof match.score === "number" ? match.score : undefined,
         });
       }
     }

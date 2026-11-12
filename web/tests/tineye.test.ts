@@ -57,12 +57,14 @@ describe("TinEye provider", () => {
         siteName: "example.test",
         thumbnailUrl: "https://img.tineye.com/result/abc-71",
         foundDate: new Date("2024-02-13T00:00:00Z"),
+        score: 100,
       },
       {
         pageUrl: "https://www.example.test/thread/2",
         siteName: "example.test",
         thumbnailUrl: "https://img.tineye.com/result/abc-71",
         foundDate: undefined,
+        score: 100,
       },
     ]);
   });

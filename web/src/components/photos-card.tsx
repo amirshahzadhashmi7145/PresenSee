@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface PhotoItem {
   id: string;
@@ -25,7 +25,49 @@ export function PhotosCard({ photos, canUpload, max }: { photos: PhotoItem[]; ca
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState<{ name: string; ok: boolean; text: string }[]>([]);
 
-  async function upload(files: FileList | null) {
+  const video = useRef<HTMLVideoElement>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const [camera, setCamera] = useState(false);
+
+  function closeCamera() {
+    stream.current?.getTracks().forEach((track) => track.stop());
+    stream.current = null;
+    setCamera(false);
+  }
+  useEffect(() => () => stream.current?.getTracks().forEach((track) => track.stop()), []);
+
+  async function openCamera() {
+    try {
+      stream.current = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 960, facingMode: "user" },
+        audio: false,
+      });
+      setCamera(true);
+      // The video element appears after this render.
+      setTimeout(() => {
+        if (video.current && stream.current) {
+          video.current.srcObject = stream.current;
+          void video.current.play();
+        }
+      }, 0);
+    } catch {
+      setNotes([{ name: "Camera", ok: false, text: "We could not use your camera. Allow camera access and try again." }]);
+    }
+  }
+
+  async function takePhoto() {
+    const el = video.current;
+    if (!el || !el.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = el.videoWidth;
+    canvas.height = el.videoHeight;
+    canvas.getContext("2d")?.drawImage(el, 0, 0);
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+    closeCamera();
+    if (blob) await upload([new File([blob], "Camera photo.jpg", { type: "image/jpeg" })]);
+  }
+
+  async function upload(files: FileList | File[] | null) {
     if (!files?.length) return;
     setBusy(true);
     const results: { name: string; ok: boolean; text: string }[] = [];
@@ -98,6 +140,25 @@ export function PhotosCard({ photos, canUpload, max }: { photos: PhotoItem[]; ca
             onChange={(e) => upload(e.target.files)}
             className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:font-medium file:text-white disabled:opacity-40"
           />
+          <div className="mt-3">
+            {camera ? (
+              <div>
+                <video ref={video} playsInline muted className="aspect-[4/3] w-full -scale-x-100 rounded-lg bg-slate-900 object-cover" />
+                <div className="mt-2 flex gap-3">
+                  <button type="button" onClick={takePhoto} className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white">
+                    Take photo
+                  </button>
+                  <button type="button" onClick={closeCamera} className="text-sm text-slate-600 underline">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" disabled={busy || full} onClick={openCamera} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium disabled:opacity-40">
+                Or take a photo with your camera
+              </button>
+            )}
+          </div>
           {busy ? <p className="mt-2 text-sm text-slate-600">Checking…</p> : null}
           {full ? <p className="mt-2 text-sm text-slate-600">You have reached the limit of {max} photos.</p> : null}
         </div>

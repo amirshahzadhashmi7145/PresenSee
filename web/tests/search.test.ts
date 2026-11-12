@@ -151,7 +151,7 @@ describe("hard rule: search results never meet the face service", () => {
     await runSearch(account, photoId, deps());
     const row = await db.imageMatch.findFirstOrThrow({ where: { accountId: account.id } });
     expect(Object.keys(row).sort()).toEqual(
-      ["accountId", "foundDate", "id", "pageUrl", "searchRunId", "siteName", "tag", "thumbnailUrl"].sort(),
+      ["accountId", "foundDate", "id", "matchScore", "pageUrl", "searchRunId", "siteName", "tag", "thumbnailUrl"].sort(),
     );
   });
 

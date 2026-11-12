@@ -16,6 +16,8 @@ export interface ImageMatchResult {
   thumbnailUrl?: string;
   /** When the provider first saw it, if known. */
   foundDate?: Date;
+  /** How strongly it matches the photo, 0 to 100, if the provider says. */
+  score?: number;
 }
 
 export interface ReverseImageSearchProvider {

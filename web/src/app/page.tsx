@@ -2,10 +2,12 @@ import { ConsentCard } from "@/components/consent-card";
 import { DeleteAccount } from "@/components/delete-account";
 import { LiveCheck } from "@/components/live-check";
 import { PhotosCard } from "@/components/photos-card";
+import { PresenceCard } from "@/components/presence-card";
 import { type PhotoResults, ResultsCard } from "@/components/results-card";
 import { StartAccount } from "@/components/start-account";
 import { currentPassedCheck } from "@/lib/liveness";
 import { MAX_PHOTOS, listPhotos } from "@/lib/photos";
+import { profileFromUrl, summarizePresence } from "@/lib/presence";
 import { config } from "@/lib/config";
 import { MAX_SEARCHES_PER_DAY, resultsForAccount, searchesUsedToday } from "@/lib/search/service";
 import { GENERIC_REPORT_LINKS, reportLinkFor } from "@/lib/report-links";
@@ -52,6 +54,10 @@ export default async function Home() {
     const link = reportLinkFor(url);
     return link ? { platform: link.platform, url: link.url, note: link.note } : null;
   };
+  const profileOf = (url: string) => {
+    const profile = profileFromUrl(url);
+    return profile ? { platform: profile.platform, handle: profile.handle, url: profile.profileUrl } : null;
+  };
   const day = (d: Date) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   const photoResults: PhotoResults[] = photos.map((photo) => {
     const latest = runs.find((run) => run.photoId === photo.id); // runs are newest first
@@ -64,11 +70,17 @@ export default async function Home() {
         siteName: m.siteName,
         thumbnailUrl: m.thumbnailUrl,
         foundDate: m.foundDate ? day(m.foundDate) : null,
+        score: m.matchScore,
+        profile: profileOf(m.pageUrl),
         tag: m.tag,
         report: report(m.pageUrl),
       })),
     };
   });
+  const presence = summarizePresence(
+    photoResults.flatMap((p) => p.matches.map((m) => ({ pageUrl: m.pageUrl, siteName: m.siteName, tag: m.tag }))),
+  );
+  const searchedCount = photoResults.filter((p) => p.searchedAt).length;
   const current = !account?.consentedAt ? 0 : runs.length ? 3 : passed || photos.length ? 2 : 1;
   const photoItems = photos.map((photo) => ({
     id: photo.id,
@@ -101,6 +113,7 @@ export default async function Home() {
             {passed || photos.length ? (
               <PhotosCard photos={photoItems} canUpload={Boolean(passed)} max={MAX_PHOTOS} />
             ) : null}
+            {searchedCount ? <PresenceCard summary={presence} searched={searchedCount} total={photos.length} /> : null}
             {photos.length ? (
               <ResultsCard
                 photos={photoResults}

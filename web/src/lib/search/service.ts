@@ -92,6 +92,10 @@ export async function runSearch(account: AccountLike, photoId: string, deps: Sea
       siteName: result.siteName.slice(0, 200),
       thumbnailUrl: result.thumbnailUrl ?? null,
       foundDate: result.foundDate ?? null,
+      matchScore:
+        typeof result.score === "number" && Number.isFinite(result.score)
+          ? Math.max(0, Math.min(100, Math.round(result.score)))
+          : null,
     }));
   if (rows.length) await db.imageMatch.createMany({ data: rows });
   return { ok: true, runId: run.id, matches: rows.length };
@@ -111,6 +115,6 @@ export async function resultsForAccount(accountId: string) {
   return db.searchRun.findMany({
     where: { accountId },
     orderBy: { createdAt: "desc" },
-    include: { matches: { orderBy: { siteName: "asc" } } },
+    include: { matches: { orderBy: [{ matchScore: { sort: "desc", nulls: "last" } }, { siteName: "asc" }] } },
   });
 }

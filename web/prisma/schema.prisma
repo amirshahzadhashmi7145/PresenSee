@@ -98,6 +98,8 @@ model ImageMatch {
   siteName     String
   thumbnailUrl String?
   foundDate    DateTime?
+  /// How strongly the provider says it matches, 0 to 100. Not face data.
+  matchScore   Int?
   tag          Tag       @default(UNTAGGED)
 
   @@index([accountId])

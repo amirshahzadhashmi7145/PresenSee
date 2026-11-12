@@ -10,6 +10,8 @@ export interface MatchItem {
   siteName: string;
   thumbnailUrl: string | null;
   foundDate: string | null;
+  score: number | null;
+  profile: { platform: string; handle: string; url: string } | null;
   tag: Tag;
   report: ReportInfo | null;
 }
@@ -58,6 +60,21 @@ export function ResultsCard({
     router.refresh();
   }
 
+  async function searchAll() {
+    setError("");
+    for (const photo of photos.filter((p) => !p.searchedAt)) {
+      setBusy(photo.photoId);
+      const res = await fetch(`/api/photos/${photo.photoId}/search`, { method: "POST" }).catch(() => null);
+      const body = res ? await res.json().catch(() => null) : null;
+      if (!body?.ok) {
+        setError(REASON_TEXT[body?.reason] ?? "Something went wrong. Please try again.");
+        break;
+      }
+    }
+    setBusy(null);
+    router.refresh();
+  }
+
   async function tag(matchId: string, next: Tag) {
     await fetch(`/api/matches/${matchId}`, {
       method: "PATCH",
@@ -84,6 +101,16 @@ export function ResultsCard({
         </p>
       ) : null}
       {error ? <p className="mt-3 text-sm text-red-700">{error}</p> : null}
+      {photos.some((p) => !p.searchedAt) ? (
+        <button
+          type="button"
+          disabled={busy !== null || usedToday >= maxPerDay}
+          onClick={searchAll}
+          className="mt-3 rounded-lg bg-slate-900 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {busy ? "Searching…" : "Search all photos"}
+        </button>
+      ) : null}
 
       <ul className="mt-4 space-y-6">
         {photos.map((photo, index) => (
@@ -122,11 +149,19 @@ export function ResultsCard({
                         <div className="h-12 w-12 rounded bg-slate-200" />
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium">{match.siteName}</div>
+                        <div className="text-sm font-medium">
+                          {match.siteName}
+                          {match.profile ? (
+                            <a href={match.profile.url} target="_blank" rel="noopener noreferrer nofollow" className="ml-2 font-mono font-normal text-blue-700 underline">
+                              @{match.profile.handle}
+                            </a>
+                          ) : null}
+                        </div>
                         <a href={match.pageUrl} target="_blank" rel="noopener noreferrer nofollow" className="block truncate text-sm text-blue-700 underline">
                           {match.pageUrl}
                         </a>
-                        <div className="text-xs text-slate-500">{match.foundDate ? `First seen ${match.foundDate}` : "Date not known"}</div>
+                        <div className="text-xs text-slate-500">{match.foundDate ? `First seen ${match.foundDate}` : "Date not known"}
+                          {match.score !== null ? ` · Match ${match.score}%` : ""}</div>
                       </div>
                       <TagButtons tag={match.tag} onTag={(next) => tag(match.id, next)} />
                       </div>
