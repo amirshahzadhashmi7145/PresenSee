@@ -50,7 +50,8 @@ All settings live in `.env` (never committed). `.env.example` lists every one.
 
 | Setting | Meaning |
 |---|---|
-| `IMAGE_SEARCH_PROVIDER` | `mock` (made-up results, no key) or `tineye` (real search) |
+| `IMAGE_SEARCH_PROVIDER` | `mock` (made-up results, no key), `google` (real, 1,000 free searches a month) or `tineye` (real, paid) |
+| `GOOGLE_VISION_API_KEY` | Key for Google Cloud Vision "Web Detection". The app stops at 900 searches a month so it stays inside the free allowance. |
 | `TINEYE_API_KEY` | Your TinEye key. TinEye's docs print a free sandbox key that returns fixed sample results. |
 | `SELFIE_STORE` | `disk` keeps one encrypted reference selfie in local storage (testing only). `memory` keeps it only in the face service's memory for 15 minutes. |
 | `PHOTO_ENC_KEY_K1`, `PHOTO_ENC_ACTIVE_KEY_ID` | The key that encrypts stored photos |
@@ -100,6 +101,7 @@ This list is what stands between the MVP and a public launch.
 
 - **Add sign-up.** Without it, clearing cookies gives a new account and resets the limits.
 - **Set `SELFIE_STORE=memory`.** The saved selfie on disk is a testing convenience.
+- **Google Vision.** Free for 1,000 searches a month, then US$3.50 per 1,000 (November 2026). It returns pages that hold a copy of the photo; the app ignores its look-alike images and name guesses on purpose.
 - **TinEye.** Real results need a paid bundle (the smallest was US$200 for 5,000 searches in November 2026). TinEye's general terms forbid showing its results in an app it has not approved, so get its written OK first.
 - **The live check is basic.** It stops a printed photo or a still on a phone. It does not stop a fake camera feeding prepared video or a live deepfake, and it has not been lab-tested.
 - **Match strictness is untuned.** It uses OpenCV's published default and was tried on only a handful of real photos.

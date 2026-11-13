@@ -40,6 +40,9 @@ export const config = {
   get imageSearchProvider() {
     return optional("IMAGE_SEARCH_PROVIDER", "mock");
   },
+  get googleVisionApiKey() {
+    return optional("GOOGLE_VISION_API_KEY", "");
+  },
   get tineyeApiKey() {
     return optional("TINEYE_API_KEY", "");
   },

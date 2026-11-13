@@ -141,7 +141,7 @@ describe("hard rule: search results never meet the face service", () => {
       const text = readFileSync(path.join(root, f), "utf8");
       expect(text, f).not.toMatch(/face-client|liveness|photos"/);
       // The server never downloads result images: the only outside call is the provider's own API.
-      if (!f.endsWith("tineye-provider.ts")) expect(text, f).not.toMatch(/\bfetch\(/);
+      if (!/(tineye|google-vision)-provider\.ts$/.test(f)) expect(text, f).not.toMatch(/\bfetch\(/);
     }
   });
 
@@ -210,6 +210,23 @@ describe("hard rule: at most 20 searches per account per day", () => {
     provider.fail = true;
     expect(await runSearch(account, photoId, deps())).toEqual({ ok: false, reason: "provider_error" });
     expect(await searchesUsedToday(account.id)).toBe(0);
+  });
+});
+
+describe("monthly cap that keeps a free provider free", () => {
+  it("stops all accounts together at the provider's monthly limit", async () => {
+    const capped = new SpyProvider();
+    Object.assign(capped, { name: `capped-${Date.now()}`, monthlyLimit: 3 });
+    const first = await newAccount();
+    const second = await newAccount();
+    const a = await passedPhoto(first.id);
+    const b = await passedPhoto(second.id);
+    const d = { provider: capped, storage: store };
+    expect((await runSearch(first, a, d)).ok).toBe(true);
+    expect((await runSearch(second, b, d)).ok).toBe(true);
+    expect((await runSearch(first, a, d)).ok).toBe(true);
+    expect(await runSearch(second, b, d)).toEqual({ ok: false, reason: "monthly_limit" });
+    expect(capped.calls).toHaveLength(3);
   });
 });
 

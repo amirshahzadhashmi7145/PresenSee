@@ -24,6 +24,7 @@ export interface PhotoResults {
 
 const REASON_TEXT: Record<string, string> = {
   daily_limit: "You have used all 20 searches for today. Try again tomorrow.",
+  monthly_limit: "The free searches for this month are used up. They start again next month.",
   photo_not_found: "This photo is no longer available.",
   provider_error: "The search service did not answer. Please try again.",
   consent_required: "Please accept the consent screen first.",
@@ -161,7 +162,7 @@ export function ResultsCard({
                           {match.pageUrl}
                         </a>
                         <div className="text-xs text-slate-500">{match.foundDate ? `First seen ${match.foundDate}` : "Date not known"}
-                          {match.score !== null ? ` · Match ${match.score}%` : ""}</div>
+                          {match.score === 100 ? " · Exact copy" : match.score !== null ? ` · Match ${match.score}%` : ""}</div>
                       </div>
                       <TagButtons tag={match.tag} onTag={(next) => tag(match.id, next)} />
                       </div>

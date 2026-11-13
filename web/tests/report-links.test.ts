@@ -44,7 +44,14 @@ describe("hard rule: no scraping", () => {
       .split("\n")
       .filter((f) => /\.(ts|tsx)$/.test(f));
     const withFetch = files.filter((f) => /\bfetch\(/.test(readFileSync(path.join(root, f), "utf8")));
-    expect(withFetch.sort()).toEqual(["web/src/lib/face-client.ts", "web/src/lib/search/tineye-provider.ts"]);
+    expect(withFetch.sort()).toEqual([
+      "web/src/lib/face-client.ts",
+      "web/src/lib/search/google-vision-provider.ts",
+      "web/src/lib/search/tineye-provider.ts",
+    ]);
+    const google = readFileSync(path.join(root, "web/src/lib/search/google-vision-provider.ts"), "utf8");
+    const googleHosts = [...google.matchAll(/"https:\/\/([a-z0-9.-]+)/g)].map((m) => m[1]);
+    expect(new Set(googleHosts)).toEqual(new Set(["vision.googleapis.com"]));
     const tineye = readFileSync(path.join(root, "web/src/lib/search/tineye-provider.ts"), "utf8");
     const hosts = [...tineye.matchAll(/https:\/\/([a-z0-9.-]+)/g)].map((m) => m[1]);
     expect(new Set(hosts)).toEqual(new Set(["api.tineye.com"]));

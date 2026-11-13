@@ -22,5 +22,7 @@ export interface ImageMatchResult {
 
 export interface ReverseImageSearchProvider {
   readonly name: string;
+  /** Most searches allowed per calendar month across all accounts (to stay in a free allowance). */
+  readonly monthlyLimit?: number;
   search(image: SearchImage): Promise<ImageMatchResult[]>;
 }

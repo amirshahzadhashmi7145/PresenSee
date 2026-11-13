@@ -8,6 +8,7 @@ const STATUS: Record<string, number> = {
   consent_required: 403,
   photo_not_found: 404,
   daily_limit: 429,
+  monthly_limit: 429,
   provider_error: 502,
 };
 

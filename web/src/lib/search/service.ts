@@ -59,12 +59,20 @@ export async function runSearch(account: AccountLike, photoId: string, deps: Sea
     const used = await tx.searchRun.count({
       where: { accountId: account.id, createdAt: { gte: startOfUtcDay(now) } },
     });
-    if (used >= MAX_SEARCHES_PER_DAY) return null;
+    if (used >= MAX_SEARCHES_PER_DAY) return "daily" as const;
+    if (deps.provider.monthlyLimit !== undefined) {
+      // One lock for everybody, so the monthly total cannot be passed either.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`month:${deps.provider.name}`}))`;
+      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const month = await tx.searchRun.count({ where: { provider: deps.provider.name, createdAt: { gte: monthStart } } });
+      if (month >= deps.provider.monthlyLimit) return "monthly" as const;
+    }
     return tx.searchRun.create({
       data: { accountId: account.id, photoId: photo.id, provider: deps.provider.name, createdAt: now },
     });
   });
-  if (!run) return { ok: false, reason: "daily_limit" };
+  if (run === "daily") return { ok: false, reason: "daily_limit" };
+  if (run === "monthly") return { ok: false, reason: "monthly_limit" };
 
   const bytes = await deps.storage.get(photo.storageKey);
   if (!bytes) {
