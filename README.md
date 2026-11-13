@@ -12,9 +12,10 @@ It is a self-check tool. It is not a tool to look up other people.
 2. **Live selfie check.** Your camera opens and the server asks for 3 random moves (turn left, turn right, open mouth, smile). A still photo cannot pass.
 3. **Upload photos or take them with your camera** (up to 5). Each must show exactly one face, and that face must match your live selfie. A photo that fails is rejected and never saved.
 4. **Search.** Each accepted photo is sent to a reverse image search provider. You get the pages where it appears: link, site, thumbnail, match strength, and date when known.
-5. **Your internet presence.** The results are rolled up into the profiles (platform and name) and websites that use your photos. This is worked out from the result links only; no page is visited.
-6. **Tag** each result as Mine, Fake or Ignore. For Fake you get the official report page of that platform.
-7. **Delete my account** wipes every photo, result and record right away.
+5. **Find my face (optional).** After a separate consent, the selfie from your live check is sent to a face-search service, which returns pages showing your face, including photos you never uploaded. Only the person who just passed the live check can be searched.
+6. **Your internet presence.** The results are rolled up into the profiles (platform and name) and websites that use your photos. This is worked out from the result links only; no page is visited.
+7. **Tag** each result as Mine, Fake or Ignore. For Fake you get the official report page of that platform.
+8. **Delete my account** wipes every photo, result and record right away.
 
 ## Run it
 
@@ -51,6 +52,8 @@ All settings live in `.env` (never committed). `.env.example` lists every one.
 | Setting | Meaning |
 |---|---|
 | `IMAGE_SEARCH_PROVIDER` | `mock` (made-up results, no key), `google` (real, 1,000 free searches a month) or `tineye` (real, paid) |
+| `FACE_SEARCH_PROVIDER` | `off`, `mock` (made-up results) or `facecheck` (FaceCheck.ID, about US$0.30 a search) |
+| `FACECHECK_API_TOKEN`, `FACECHECK_DEMO` | FaceCheck token, and its free test mode (`true` = free, results not meaningful) |
 | `GOOGLE_VISION_API_KEY` | Key for Google Cloud Vision "Web Detection". The app stops at 900 searches a month so it stays inside the free allowance. |
 | `TINEYE_API_KEY` | Your TinEye key. TinEye's docs print a free sandbox key that returns fixed sample results. |
 | `SELFIE_STORE` | `disk` keeps one encrypted reference selfie in local storage (testing only). `memory` keeps it only in the face service's memory for 15 minutes. |
@@ -77,7 +80,8 @@ All three allow commercial use. One open point: OpenCV has not published which p
 
 | Rule | Test file |
 |---|---|
-| Face match is 1-to-1 only: no face database, never against other users | `face/tests/test_health.py` (allowed routes), `face/tests/test_match_api.py`, `face/tests/test_liveness_api.py` |
+| Our own face matching is 1-to-1 only: no face database, never against other users | `face/tests/test_health.py` (allowed routes), `face/tests/test_match_api.py`, `face/tests/test_liveness_api.py` |
+| Face search: only the live-verified person's own selfie can be sent, after separate consent, 3 a day, weak matches dropped | `web/tests/face-search.test.ts` |
 | Never compare faces against search results | `web/tests/search.test.ts` |
 | Face data is computed, compared and thrown away; never stored | `web/tests/config.test.ts` (schema), `web/tests/liveness.test.ts`, `face/tests/test_match_api.py` |
 | Selfie frames do not linger | `face/tests/test_liveness_api.py` |
@@ -103,6 +107,7 @@ This list is what stands between the MVP and a public launch.
 - **Set `SELFIE_STORE=memory`.** The saved selfie on disk is a testing convenience.
 - **Google Vision.** Free for 1,000 searches a month, then US$3.50 per 1,000 (November 2026). It returns pages that hold a copy of the photo; the app ignores its look-alike images and name guesses on purpose.
 - **TinEye.** Real results need a paid bundle (the smallest was US$200 for 5,000 searches in November 2026). TinEye's general terms forbid showing its results in an app it has not approved, so get its written OK first.
+- **Face search raises the stakes.** The live check is now the only thing stopping someone from searching another person's face, so it must be strengthened first. Face search is restricted or banned in some places (EU, UK, Illinois and others), and the provider's terms apply. Get legal advice before offering it to anyone but yourself.
 - **The live check is basic.** It stops a printed photo or a still on a phone. It does not stop a fake camera feeding prepared video or a live deepfake, and it has not been lab-tested.
 - **Match strictness is untuned.** It uses OpenCV's published default and was tried on only a handful of real photos.
 - **Legal review.** Face data is sensitive under privacy law in many places. A lawyer should review the consent wording, retention, and the SFace training-data point.

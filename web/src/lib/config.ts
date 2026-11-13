@@ -40,6 +40,16 @@ export const config = {
   get imageSearchProvider() {
     return optional("IMAGE_SEARCH_PROVIDER", "mock");
   },
+  get faceSearchProvider() {
+    return optional("FACE_SEARCH_PROVIDER", "mock");
+  },
+  get facecheckApiToken() {
+    return optional("FACECHECK_API_TOKEN", "");
+  },
+  /** FaceCheck's free test mode: quick, costs nothing, results are not meaningful. */
+  get facecheckDemo() {
+    return optional("FACECHECK_DEMO", "true") !== "false";
+  },
   get googleVisionApiKey() {
     return optional("GOOGLE_VISION_API_KEY", "");
   },

@@ -11,6 +11,7 @@ PresenSee lets a person check their **own** online presence. They prove some pho
 | Name "SelfCheck" | **PresenSee** |
 | Email sign-up with a one-time code | **Skipped for now.** Opening the app creates an anonymous account tied to the browser (a cookie). Limits and "Delete my account" work on that account. Email sign-up can be added later on top of it. Until then the app is for local testing only, not for the public internet. |
 | Username check on about 30 sites | **Removed (owner's decision).** Presence is found by photos only. No handles are collected and no sites are requested. |
+| Face match is 1-to-1 only; never query a database of faces | **Changed (owner's decision, 2026-11-13).** A face search was added: the live selfie can be sent to a face-search service to find other photos of the same person. The new rule: only the selfie of the person who just passed the live check may ever be searched, after a separate consent. PresenSee itself still keeps no face database. |
 | Tests written at the end | Tests for each hard rule are written **with** the step that builds it. Step 7 is a final check that none is missing. |
 
 ## The three parts

@@ -1,10 +1,12 @@
 import { ConsentCard } from "@/components/consent-card";
 import { DeleteAccount } from "@/components/delete-account";
+import { FaceSearchCard } from "@/components/face-search-card";
 import { LiveCheck } from "@/components/live-check";
 import { PhotosCard } from "@/components/photos-card";
 import { PresenceCard } from "@/components/presence-card";
-import { type PhotoResults, ResultsCard } from "@/components/results-card";
+import { type MatchItem, type PhotoResults, ResultsCard } from "@/components/results-card";
 import { StartAccount } from "@/components/start-account";
+import { MAX_FACE_SEARCHES_PER_DAY, faceSearchesUsedToday } from "@/lib/face-search/service";
 import { currentPassedCheck } from "@/lib/liveness";
 import { MAX_PHOTOS, listPhotos } from "@/lib/photos";
 import { profileFromUrl, summarizePresence } from "@/lib/presence";
@@ -48,8 +50,8 @@ export default async function Home() {
   }
   const passed = account?.consentedAt ? await currentPassedCheck(account.id) : null;
   const photos = account?.consentedAt ? await listPhotos(account.id) : [];
-  const runs = account && photos.length ? await resultsForAccount(account.id) : [];
-  const usedToday = account && photos.length ? await searchesUsedToday(account.id) : 0;
+  const runs = account?.consentedAt ? await resultsForAccount(account.id) : [];
+  const usedToday = account?.consentedAt ? await searchesUsedToday(account.id) : 0;
   const report = (url: string) => {
     const link = reportLinkFor(url);
     return link ? { platform: link.platform, url: link.url, note: link.note } : null;
@@ -77,11 +79,30 @@ export default async function Home() {
       })),
     };
   });
+  const faceProvider = config.faceSearchProvider;
+  const faceRun = runs.find((run) => run.kind === "face");
+  const faceMatches: MatchItem[] = (faceRun?.matches ?? []).map((m) => ({
+    id: m.id,
+    pageUrl: m.pageUrl,
+    siteName: m.siteName,
+    thumbnailUrl: m.thumbnailUrl,
+    foundDate: null,
+    score: m.matchScore,
+    profile: profileOf(m.pageUrl),
+    tag: m.tag,
+    report: report(m.pageUrl),
+  }));
+  const faceUsedToday = account?.consentedAt ? await faceSearchesUsedToday(account.id) : 0;
   const presence = summarizePresence(
-    photoResults.flatMap((p) => p.matches.map((m) => ({ pageUrl: m.pageUrl, siteName: m.siteName, tag: m.tag }))),
+    [...photoResults.flatMap((p) => p.matches), ...faceMatches].map((m) => ({
+      pageUrl: m.pageUrl,
+      siteName: m.siteName,
+      tag: m.tag,
+    })),
   );
   const searchedCount = photoResults.filter((p) => p.searchedAt).length;
-  const current = !account?.consentedAt ? 0 : runs.length ? 3 : passed || photos.length ? 2 : 1;
+  const anySearch = searchedCount > 0 || Boolean(faceRun);
+  const current = !account?.consentedAt ? 0 : anySearch ? 3 : passed || photos.length ? 2 : 1;
   const photoItems = photos.map((photo) => ({
     id: photo.id,
     expires: photo.expiresAt.toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
@@ -113,7 +134,22 @@ export default async function Home() {
             {passed || photos.length ? (
               <PhotosCard photos={photoItems} canUpload={Boolean(passed)} max={MAX_PHOTOS} />
             ) : null}
-            {searchedCount ? <PresenceCard summary={presence} searched={searchedCount} total={photos.length} /> : null}
+            {anySearch ? (
+              <PresenceCard summary={presence} searched={searchedCount} total={photos.length} faceSearched={Boolean(faceRun)} />
+            ) : null}
+            {faceProvider !== "off" && (passed || faceRun) ? (
+              <FaceSearchCard
+                matches={faceMatches}
+                searchedAt={faceRun ? day(faceRun.createdAt) : null}
+                agreed={Boolean(account.faceSearchConsentedAt)}
+                canSearch={Boolean(passed)}
+                usedToday={faceUsedToday}
+                maxPerDay={MAX_FACE_SEARCHES_PER_DAY}
+                providerName={faceProvider === "facecheck" ? "FaceCheck.ID" : "test provider (no data leaves this computer)"}
+                testMode={faceProvider === "mock" || (faceProvider === "facecheck" && config.facecheckDemo)}
+                fallbacks={GENERIC_REPORT_LINKS}
+              />
+            ) : null}
             {photos.length ? (
               <ResultsCard
                 photos={photoResults}

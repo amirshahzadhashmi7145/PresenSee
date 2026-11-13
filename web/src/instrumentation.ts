@@ -13,7 +13,9 @@ export async function register() {
   const sweep = () =>
     runRetention(storage())
       .then((done) => {
-        if (done.photos || done.selfies) console.log(`auto-delete: ${done.photos} photos, ${done.selfies} selfies`);
+        if (done.photos || done.selfies || done.faceResults) {
+          console.log(`auto-delete: ${done.photos} photos, ${done.selfies} selfies, ${done.faceResults} face searches`);
+        }
       })
       .catch((error) => console.error("auto-delete error:", error instanceof Error ? error.message.slice(0, 200) : "unknown"));
 

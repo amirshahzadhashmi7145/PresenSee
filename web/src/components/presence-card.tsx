@@ -10,12 +10,23 @@ function Stat({ value, label, tone = "" }: { value: number; label: string; tone?
 }
 
 /** The roll-up: where on the internet your photos show up. */
-export function PresenceCard({ summary, searched, total }: { summary: PresenceSummary; searched: number; total: number }) {
+export function PresenceCard({
+  summary,
+  searched,
+  total,
+  faceSearched,
+}: {
+  summary: PresenceSummary;
+  searched: number;
+  total: number;
+  faceSearched: boolean;
+}) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-semibold">Your internet presence</h2>
       <p className="mt-1 text-sm text-slate-600">
-        Built from {searched} of {total} photos searched. Tag the results below and this summary updates.
+        Built from {searched} of {total} photos searched{faceSearched ? " and a face search" : ""}. Tag the results
+        below and this summary updates.
       </p>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -26,7 +37,7 @@ export function PresenceCard({ summary, searched, total }: { summary: PresenceSu
         <Stat value={summary.untagged} label="not reviewed" tone="text-amber-700" />
       </div>
 
-      <h3 className="mt-5 font-semibold">Profiles using your photos</h3>
+      <h3 className="mt-5 font-semibold">Profiles showing you or your photos</h3>
       {summary.profiles.length ? (
         <ul className="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-200">
           {summary.profiles.map((profile) => (

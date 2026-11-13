@@ -38,6 +38,24 @@ export async function purgeExpiredSelfies(storage: PhotoStorage, now: Date = new
   return old.length;
 }
 
+/** Face-search results (links, scores, thumbnails) also go after 30 days. */
+export async function purgeOldFaceResults(storage: PhotoStorage, now: Date = new Date()): Promise<number> {
+  const cutoff = new Date(now.getTime() - PHOTO_LIFETIME_MS);
+  const runs = await db.searchRun.findMany({
+    where: { kind: "face", createdAt: { lte: cutoff } },
+    include: { matches: { select: { id: true } } },
+  });
+  for (const run of runs) {
+    for (const match of run.matches) await storage.delete(`accounts/${run.accountId}/face-results/${match.id}`);
+    await db.searchRun.delete({ where: { id: run.id } }); // its results go with it
+  }
+  return runs.length;
+}
+
 export async function runRetention(storage: PhotoStorage, now: Date = new Date()) {
-  return { photos: await purgeExpiredPhotos(storage, now), selfies: await purgeExpiredSelfies(storage, now) };
+  return {
+    photos: await purgeExpiredPhotos(storage, now),
+    selfies: await purgeExpiredSelfies(storage, now),
+    faceResults: await purgeOldFaceResults(storage, now),
+  };
 }

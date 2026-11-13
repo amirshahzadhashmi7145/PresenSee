@@ -32,6 +32,8 @@ model Account {
   tokenHash   String    @unique
   createdAt   DateTime  @default(now())
   consentedAt DateTime?
+  /// Separate, explicit agreement to send the live selfie to the face-search service.
+  faceSearchConsentedAt DateTime?
 
   livenessSessions LivenessSession[]
   photos           Photo[]
@@ -77,8 +79,10 @@ model SearchRun {
   id        String   @id @default(cuid())
   accountId String
   account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  photoId   String
-  photo     Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  /// "photo" = same-photo search of one upload. "face" = face search of the live selfie.
+  kind      String   @default("photo")
+  photoId   String?
+  photo     Photo?   @relation(fields: [photoId], references: [id], onDelete: Cascade)
   provider  String
   createdAt DateTime @default(now())
 

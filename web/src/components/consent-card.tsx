@@ -38,7 +38,10 @@ export function ConsentCard() {
       <ul className="mt-1 list-disc space-y-1 pl-5 text-slate-700">
         <li>The selfie is compared only with your own uploads, to confirm the photos are of you.</li>
         <li>Photos that match are searched on the web to find copies of them.</li>
-        <li>Your face is never compared with other people or with search results.</li>
+        <li>
+          Optional, and only if you agree separately later: your live selfie can be sent to a
+          face-search service to look for other photos of your own face.
+        </li>
       </ul>
 
       <h3 className="mt-5 font-semibold">How it is kept</h3>

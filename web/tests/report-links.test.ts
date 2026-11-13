@@ -32,7 +32,7 @@ describe("official report links", () => {
 });
 
 describe("hard rule: no scraping", () => {
-  it("the only outbound calls go to our own face service and the search provider's official API", async () => {
+  it("the only outbound calls go to our own face service and the search providers' official APIs", async () => {
     const { execFileSync } = await import("node:child_process");
     const { readFileSync } = await import("node:fs");
     const path = await import("node:path");
@@ -46,6 +46,7 @@ describe("hard rule: no scraping", () => {
     const withFetch = files.filter((f) => /\bfetch\(/.test(readFileSync(path.join(root, f), "utf8")));
     expect(withFetch.sort()).toEqual([
       "web/src/lib/face-client.ts",
+      "web/src/lib/face-search/facecheck-provider.ts",
       "web/src/lib/search/google-vision-provider.ts",
       "web/src/lib/search/tineye-provider.ts",
     ]);
